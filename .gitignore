@@ -1,0 +1,25 @@
+# Node.js
+node_modules/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Large files managed by LFS
+*.pt
+*.bin
+*.pd
+*.h5
