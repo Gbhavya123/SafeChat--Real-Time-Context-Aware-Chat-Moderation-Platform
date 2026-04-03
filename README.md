@@ -1,4 +1,4 @@
-# SafeChat--Real-Time-Context-Aware-Chat-Moderation-Platform
+# SafeChat--Real-Time-Context-Aware-Chat-Moderation-Platform !
 SafeChat is an AI-driven moderation system designed to foster healthy digital conversations. Unlike traditional "block-and-delete" moderation, SafeChat detects toxic messages in real-time and uses advanced NLP models to rewrite them into safe, polite, and intent-preserving alternatives based on the community's context.
 
 ## Key Features
