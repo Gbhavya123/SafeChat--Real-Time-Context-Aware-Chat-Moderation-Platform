@@ -1,0 +1,7 @@
+venv_py310_detox/
+muril-base-local/
+training/
+.hf_model_bundle/
+.hf_model_repo/
+.hf_space_bundle/
+.hf_space_bundle_check/
