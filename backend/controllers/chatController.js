@@ -296,3 +296,88 @@ exports.deleteMessage = async (req, res) => {
         return response(res, 500, 'Internal server error')
     }
 } 
+exports.confirmSend = async (req, res) => {
+    try {
+        const { senderId, receiverId, finalContent, environment, tempId } = req.body;
+
+        
+        if (!finalContent || !finalContent.trim()) {
+            return response(res, 400, "Message content required");
+        }
+        const cached = moderationCache.get(tempId);
+        if (!cached) {
+    return res.status(400).json({ action: "ERROR", message: "Invalid request" });
+}
+
+if (cached.content !== finalContent) {
+    return res.status(400).json({
+        action: "ERROR",
+        message: "Message modified. Please resend."
+    });
+}
+const moderationResult = cached.moderationResult;
+        moderationCache.delete(tempId);
+
+
+        const finalDecision = applyPolicy(environment, moderationResult);
+
+        
+        if (finalDecision.action === "BLOCK") {
+            return res.status(200).json({
+                action: "BLOCK",
+                severity: finalDecision.severity,
+                suggestion: finalDecision.suggestion
+            });
+        }
+
+        const participants = [senderId, receiverId].sort();
+        let conversation = await Conversation.findOne({ participants });
+
+        if (!conversation) {
+            conversation = await Conversation.create({ participants });
+        }
+
+       
+        const message = await Message.create({
+            conversation: conversation._id,
+            sender: senderId,
+            receiver: receiverId,
+            content: finalContent,
+            contentType: "text"
+        });
+
+      
+        conversation.lastMessage = message._id;
+        conversation.unreadCount += 1;
+        await conversation.save();
+
+        const populatedMessage = await Message.findById(message._id)
+            .populate("sender", "username profilePicture")
+            .populate("receiver", "username profilePicture");
+
+        
+        const receiverSocketId = req.socketUserMap.get(receiverId);
+
+        if (receiverSocketId) {
+            req.io.to(receiverSocketId).emit("receive_message", {
+                _id: populatedMessage._id,
+                sender: populatedMessage.sender,
+                content: populatedMessage.content,
+                createdAt: populatedMessage.createdAt,
+                severity: moderationResult?.severity || "LOW",
+                suggestion:moderationResult.suggestion
+            });
+        }
+
+      
+        return res.status(200).json({
+            action: "ALLOW",
+            severity: moderationResult?.severity || "LOW",
+            suggestion: moderationResult?.suggestion || null
+        });
+
+    } catch (error) {
+        console.error(error);
+        return response(res, 500, "Internal server error");
+    }
+};
